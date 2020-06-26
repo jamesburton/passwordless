@@ -292,7 +292,45 @@ namespace passwordless.Models
 	* Coming Soon
 * Set-up Continuous Integration (CLI)
 	* Coming Soon
+* Set-up Continuous Integration (Cloud Shell)
+	* Navigate to (https://shell.azure.com/)[https://shell.azure.com/]
+	* Select Subscription
+	* Select "Bash"
+	* Select or create a storage account to use (low storage costs may be required)
+	* Copy (or enter) the following script:
+```
+#!/bin/bash
 
+gitrepo=<replace-with-URL-of-your-own-GitHub-repo>
+# e.g. gitrepo=https://github.com/jamesburton/passwordless.git
+token=<replace-with-a-GitHub-access-token>
+# NB: Get via GitHub portal (https://github.com/settings/tokens)
+webappname=passwordless$RANDOM
+resourcegroup=passwordlessResourceGroup
+
+# Create a resource group.
+az group create --location uksouth --name $resourcegroup
+
+# Create an App Service plan in `FREE` tier.
+az appservice plan create --name $webappname --resource-group $resourcegroup --sku FREE
+
+# Create a web app.
+az webapp create --name $webappname --resource-group $resourcegroup --plan $webappname
+
+# Configure continuous deployment from GitHub. 
+# --git-token parameter is required only once per Azure account (Azure remembers token).
+az webapp deployment source config --name $webappname --resource-group $resourcegroup \
+--repo-url $gitrepo --branch master --git-token $token
+
+# Copy the result of the following command into a browser to see the web app.
+echo http://$webappname.azurewebsites.net
+```
+* Clean up deployment
+	* Run the follow script to remove the resource group and associated resources:
+```
+az group delete --name passwordlessResourceGroup
+```
+	
 ## TODO
 
 * Add Continous Integration deployment notes
