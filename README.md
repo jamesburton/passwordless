@@ -9,8 +9,8 @@
 * Update `local.settings.json` if not using local storage
 * Install NuGet packages for required bindings:
 	`dotnet add package Microsoft.Azure.WebJobs.Extensions.<BINDING_TYPE_NAME> --version <TARGET_VERSION>`
-	* See supported bindings: https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings#supported-bindings
-	* Check versions on NuGet e.g. https://www.nuget.org/packages/Microsoft.Azure.WebJobs.Extensions.CosmosDB
+	* See supported bindings: [https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings#supported-bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings#supported-bindings)
+	* Check versions on NuGet e.g. [https://www.nuget.org/packages/Microsoft.Azure.WebJobs.Extensions.CosmosDB](https://www.nuget.org/packages/Microsoft.Azure.WebJobs.Extensions.CosmosDB)
 	* e.g. `dotnet add package Microsoft.Azure.WebJobs.Extensions.CosmosDB --version 3.0.7`
 * Configure CosmosDB to have a "passwordless" database
 	* Add container "users"
@@ -293,7 +293,7 @@ namespace passwordless.Models
 * Set-up Continuous Integration (CLI)
 	* Coming Soon
 * Set-up Continuous Integration (Cloud Shell)
-	* Navigate to (https://shell.azure.com/)[https://shell.azure.com/]
+	* Navigate to [https://shell.azure.com/](https://shell.azure.com/)
 	* Select Subscription
 	* Select "Bash"
 	* Select or create a storage account to use (low storage costs may be required)
@@ -333,17 +333,39 @@ az group delete --name passwordlessResourceGroup
 	
 ## TODO
 
-* Add Continous Integration deployment notes
+* Add GDPR fields
+	* Include GDPR option (config?)
+	* With GDPR enabled, require confirmation of GDPR to enable access
+		* Add first GDPR confirmation email (create no record)
+		* Provide ConfirmGDPR endpoint to confirm and send initial details
+* Consider temporary/persistent login options (varied links, additional temporary tokens, etc.)
+* Consider data access permissions (by field?) and filtered user profile access accordingly.
+* Add basic profile fields
+	* Name
+	* ImageUrl
+	* Company
+	* ?TwitterId
+	* ?FacebookId
+	* ?GoogleId
+	* ?MicrosoftId
+* Add Continuous Integration deployment notes
+	* Visual Studio
+	* CLI (PowerShell)
 * Add C# Library
 * Add C# Library Usage
 	* ASP.NET Core Usage
 	* Blazor Usage
 * Add JS Library
+* Add JS Library Usage
 	* Use client-side
 	* Use within node back-end
 	* MST Helper types/middleware
+* Multi-tenancy
+	* Application registration, application tokens, per-application user tokens (and short codes?)
+	* Roles
+		* Premium feature (possibly with free "Admin" role for all?)
 ## Summary
 
 We now have an API to generate passwordless tokens and codes, a method to accept and email and short code to get a token back, and methods to get the user either by token (GetUser) or by id (GetUserById).  The user can either save a token as their full access credentials, or this could be hidden and the user would simply enter the short-code and let the server fetch the token from that and their email address.
 
-The full project is available at (https://github.com/jamesburton/passwordless.git)[https://github.com/jamesburton/passwordless.git]
+The full project is available at [https://github.com/jamesburton/passwordless.git](https://github.com/jamesburton/passwordless.git)
