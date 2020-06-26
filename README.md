@@ -9,18 +9,14 @@
 * Update `local.settings.json` if not using local storage
 * Install NuGet packages for required bindings:
 	`dotnet add package Microsoft.Azure.WebJobs.Extensions.<BINDING_TYPE_NAME> --version <TARGET_VERSION>`
-	See supported bindings: https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings#supported-bindings
-	Check versions on NuGet e.g. https://www.nuget.org/packages/Microsoft.Azure.WebJobs.Extensions.CosmosDB
-	e.g.
-	* `dotnet add package Microsoft.Azure.WebJobs.Extensions.CosmosDB --version 3.0.7`
+	* See supported bindings: https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings#supported-bindings
+	* Check versions on NuGet e.g. https://www.nuget.org/packages/Microsoft.Azure.WebJobs.Extensions.CosmosDB
+	* e.g. `dotnet add package Microsoft.Azure.WebJobs.Extensions.CosmosDB --version 3.0.7`
 * Configure CosmosDB to have a "passwordless" database
 	* Add container "users"
 		Fields: id, email, token, shortCode
-	* ?Add container "adminTokens"
-		? Is this needed, or should this just use azure function keys?
-		Fields: id, name, token
 * Add Functions
-	NB: Trigger templates: 
+	* NB: Available Trigger templates: 
 		* Blob trigger
 		* Cosmos DB trigger
 		* Event Grid trigger
@@ -40,7 +36,7 @@
 		`func new --name GetUser --template "HTTP trigger"`
 * Test scaffolded routines with `func start`, check they are all listed
 * Add `CosmosDBConnection` value to `local.settings.json` (with `Values`)
-	... use connection string grabbed from Cosmos DB management interfaces
+	* NB: Use connection string grabbed from Cosmos DB management interfaces
 * Add `Models` folder
 * Add `Models\User.cs` with the following:
 ```
@@ -114,7 +110,7 @@ using Microsoft.Azure.WebJobs.Extensions.CosmosDB;
 		=> http://localhost:7071/api/SendTokenEmail/bob@example.com/true
 		=> http://localhost:7071/api/SendTokenEmail/alice@example.com
 	* You should see a new user created, the same user matched, the user updated with new tokens, then a 2nd user created
-* Now we will add SendGrid bindings
+* Now we will prepare to add SendGrid bindings
 	* Add the package `dotnet add package Microsoft.Azure.WebJobs.Extensions.SendGrid`
 	* Get an API token from SendGrid (register an app and generate a key if you do not have one, but their free tier should suffice here)
 	* Add `SendGridApiKey` to `Values` in `local.settings.json`
@@ -122,13 +118,13 @@ using Microsoft.Azure.WebJobs.Extensions.CosmosDB;
 ```
 using SendGrid.Helpers.Mail;
 ```
-	* Add an output binding to the SendToken:
+* Add an output binding to the SendTokenEmail method:
 ``` C#
 // ... Cosmos DB Bindings
             [SendGrid(ApiKey="SendGridApiKey")] out SendGridMessage message,
 // ... string email, ...
 ```
-	* Replace SentTokenEmail method body after `var user = users?.FirstOrDefault();` with:
+* Replace `SendTokenEmail` method body after `var user = users?.FirstOrDefault();` with:
 ```
             Console.WriteLine($"email={email}\r\nuser={(user == null ? "null" : user.Id)}");
             newUser = user != null && !(regenerateTokens ?? false)
@@ -243,4 +239,73 @@ using Microsoft.Azure.Documents.Linq;
 	* Test via POST with "ptoken" cookie value
 	* Test via GET with "ptoken" cookie value
 	* Test no-details request failure (no-content) e.g. Browse to `http://localhost:7071/api/GetUser`
-* 
+* Add `Models/IdModel.cs` (binding model) with the following:
+```
+using Newtonsoft.Json;
+
+namespace passwordless.Models
+{
+    public class IdModel
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; }
+    }
+}
+```
+* Update `GetUserById.cs` with the following:
+```
+// Add these usings
+// Update the method to this
+        [FunctionName("GetUserById")]
+        public static async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Function, /*"get",*/ "post",
+                Route = null)] IdModel data,
+                        [CosmosDB("passwordless", "users",
+                ConnectionStringSetting = "CosmosDBConnection",
+                SqlQuery = "select * from Users u where u.id = {Id}")]
+                IEnumerable<User> users,
+            ILogger log)
+        {
+            log.LogInformation("C# HTTP trigger GetUserById function processed a request.");
+
+            var id = data?.Id;
+
+            var user = users.FirstOrDefault();
+            if(user != null) Console.WriteLine($"GetUserById for {id}:\r\n{(user == null ? "null" : JsonConvert.SerializeObject(user))}");
+
+            return new OkObjectResult(user);
+        }
+```
+* Test `http://localhost:7071/api/GetUserById` by POSTing the following:
+``` json
+{
+    "id": "<IdFromCreatedUser>"
+}
+```
+	... You should receive your JSON user object back
+* Make SendTokenEmail method anonymous by changing it's HttpTrigger to this:
+```
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post",
+                Route = "SendTokenEmail/{email}/{regenerateTokens:bool?}")] HttpRequest req,
+```
+* Set-up Continuous Integration (Visual Studio)
+	* Coming Soon
+* Set-up Continuous Integration (CLI)
+	* Coming Soon
+
+## TODO
+
+* Add Continous Integration deployment notes
+* Add C# Library
+* Add C# Library Usage
+	* ASP.NET Core Usage
+	* Blazor Usage
+* Add JS Library
+	* Use client-side
+	* Use within node back-end
+	* MST Helper types/middleware
+## Summary
+
+We now have an API to generate passwordless tokens and codes, a method to accept and email and short code to get a token back, and methods to get the user either by token (GetUser) or by id (GetUserById).  The user can either save a token as their full access credentials, or this could be hidden and the user would simply enter the short-code and let the server fetch the token from that and their email address.
+
+The full project is available at (https://github.com/jamesburton/passwordless.git)[https://github.com/jamesburton/passwordless.git]
